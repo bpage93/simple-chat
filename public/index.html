@@ -14,7 +14,12 @@
         <div id="root">
             <div class="chat-container">
                 <header>
-                    <h2>💬 Hello Chat</h2>
+                    <h2>💬 Hello User</h2>
+                    <button
+                        onclick="localStorage.removeItem('chat-messages'); location.reload();"
+                    >
+                        🗑️ Clear Chat
+                    </button>
                 </header>
 
                 <ul id="messages"></ul>
@@ -31,16 +36,25 @@
             const socket = io();
             let currentUser = {};
 
+            // Elements
             const form = document.getElementById("form");
             const input = document.getElementById("input");
             const messages = document.getElementById("messages");
 
-            socket.on("user info", (user) => {
-                currentUser = user;
-                input.disabled = false; // enable chat input
+            // 🧠 Load stored messages
+            window.addEventListener("load", () => {
+                const savedMessages =
+                    JSON.parse(localStorage.getItem("chat-messages")) || [];
+                savedMessages.forEach(addMessageToDOM);
+                messages.scrollTop = messages.scrollHeight;
             });
 
-            input.disabled = true; // disable it by default
+            socket.on("user info", (user) => {
+                currentUser = user;
+                input.disabled = false;
+            });
+
+            input.disabled = true;
 
             form.addEventListener("submit", (e) => {
                 e.preventDefault();
@@ -51,20 +65,33 @@
             });
 
             socket.on("chat message", (msg) => {
+                addMessageToDOM(msg);
+
+                // 💾 Save to localStorage
+                const savedMessages =
+                    JSON.parse(localStorage.getItem("chat-messages")) || [];
+                savedMessages.push(msg);
+                localStorage.setItem(
+                    "chat-messages",
+                    JSON.stringify(savedMessages)
+                );
+            });
+
+            // 📦 Helper to show a message in the DOM
+            function addMessageToDOM(msg) {
                 const item = document.createElement("li");
                 item.className = "message";
                 item.innerHTML = `
         <img src="${msg.avatar}" alt="avatar" class="avatar" style="border-color: ${msg.color}" />
         <div>
-          <div class="username" style="color:${msg.color}">
-            ${msg.user}<span class="timestamp">(${msg.timestamp})</span>
-          </div>
-          <div class="message-text">${msg.text}</div>
+            <div class="username" style="color:${msg.color}">
+                ${msg.user}<span class="timestamp">(${msg.timestamp})</span>
+            </div>
+            <div class="message-text">${msg.text}</div>
         </div>
-      `;
+    `;
                 messages.appendChild(item);
-                messages.scrollTop = messages.scrollHeight;
-            });
+            }
         </script>
     </body>
 </html>

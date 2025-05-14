@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>MUI Chat</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap"
+        />
+        <link rel="stylesheet" href="style.css" />
+    </head>
+    <body>
+        <div id="root">
+            <div class="chat-container">
+                <header>
+                    <h2>💬 Hello Chat</h2>
+                </header>
+
+                <ul id="messages"></ul>
+
+                <form id="form">
+                    <input id="input" placeholder="Type a message..." />
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+        </div>
+
+        <script src="/socket.io/socket.io.js"></script>
+        <script>
+            const socket = io();
+            let currentUser = {};
+
+            const form = document.getElementById("form");
+            const input = document.getElementById("input");
+            const messages = document.getElementById("messages");
+
+            socket.on("user info", (user) => {
+                currentUser = user;
+                input.disabled = false; // enable chat input
+            });
+
+            input.disabled = true; // disable it by default
+
+            form.addEventListener("submit", (e) => {
+                e.preventDefault();
+                if (input.value.trim()) {
+                    socket.emit("chat message", input.value);
+                    input.value = "";
+                }
+            });
+
+            socket.on("chat message", (msg) => {
+                const item = document.createElement("li");
+                item.className = "message";
+                item.innerHTML = `
+        <img src="${msg.avatar}" alt="avatar" class="avatar" style="border-color: ${msg.color}" />
+        <div>
+          <div class="username" style="color:${msg.color}">
+            ${msg.user}<span class="timestamp">(${msg.timestamp})</span>
+          </div>
+          <div class="message-text">${msg.text}</div>
+        </div>
+      `;
+                messages.appendChild(item);
+                messages.scrollTop = messages.scrollHeight;
+            });
+        </script>
+    </body>
+</html>
